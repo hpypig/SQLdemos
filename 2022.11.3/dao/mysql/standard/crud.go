@@ -1,26 +1,12 @@
 package mysql
 
 import (
-    "database/sql"
     "fmt"
-    _ "github.com/go-sql-driver/mysql" // goland 有个sync的过程，Linux上呢？tidy？get？
+
     "hpytest/sqldemo1/models"
     "log"
 )
-var db *sql.DB
-func InitDB() (err error){
-    address := "root:hh424@tcp(127.0.0.1:3306)/sql_demos"
-    db, err = sql.Open("mysql",address)
-    if err != nil {
-        // panic(err)
-        return
-    }
-    err = db.Ping()
-    return
-}
-func Close() {
-    db.Close()
-}
+
 
 func QueryUser(id int, user *models.User) (err error){
     sqlStr := "select id, name, age from `user` where id=?"
@@ -37,7 +23,7 @@ func QueryUserMoreThanID(id int) (err error){
     if err != nil {
         log.Println(err)
     }
-    // 释放数据库连接
+    // 释放数据库连接!!!!!!!!!!!!!!!!
     defer rows.Close()
     for rows.Next() {
         var u models.User
@@ -98,5 +84,32 @@ func DeleteUserByID(id int) (err error){
     fmt.Println(n)
     return
 }
+
+//--------------- 预处理：先发命令，再发参数
+
+func UsePrepareQueryByID(id int) {
+    sqlStr := "SELECT id, name, age FROM user WHERE id>?"
+    stmt, err := db.Prepare(sqlStr)
+    if err != nil {
+        log.Printf("prepare failed, err:%v\n", err)
+    }
+    defer stmt.Close()
+    rows, err := stmt.Query(id) // 可多次执行（一次编译，多次执行）
+    if err != nil {
+        log.Println(err)
+        return
+    }
+    defer rows.Close()
+    for rows.Next() {
+        var u models.User
+        err := rows.Scan(&u.ID, &u.Name, &u.Age)
+        if err != nil {
+            log.Println(err)
+            return
+        }
+        fmt.Println(u)
+    }
+}
+// 增删改类似，只是把 Query 换成 Exec
 
 
