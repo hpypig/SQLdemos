@@ -1,5 +1,5 @@
-package mysql
-
+package standard
+// 参考：https://www.liwenzhou.com/posts/Go/go_mysql/
 import (
 	"database/sql"
     _ "github.com/go-sql-driver/mysql" // goland 有个sync的过程，Linux上呢？tidy？get？

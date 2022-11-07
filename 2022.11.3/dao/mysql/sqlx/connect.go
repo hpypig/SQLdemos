@@ -1,10 +1,10 @@
 package sqlx
-
+//ref: https://www.liwenzhou.com/posts/Go/sqlx/
 import (
 	"fmt"
     "github.com/jmoiron/sqlx"
 )
-
+// sqlx 兼容了 sql，即 sql 原来的方法也可以用
 var db *sqlx.DB
 
 func initDB() (err error) {
