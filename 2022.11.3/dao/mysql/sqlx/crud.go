@@ -5,6 +5,15 @@ import (
     "hpytest/sqldemo1/models"
     "log"
 )
+/*
+新增api
+Get 可以直接存到结构体里
+NamedQuery 也是返回多行 rows 但
+NamedExec
+
+
+ */
+
 
 // QueryAUserByID 查询一个用户; 用 get 代替 QueryRow
 func QueryAUserByID(id int) (user models.User, err error) {
@@ -16,7 +25,12 @@ func QueryAUserByID(id int) (user models.User, err error) {
     //    return user, err
     //}
     //return // user 不是nil，上级必须先判断 err，才知道 user 是否可用
-    db.Get(&user,sqlStr,2)
+    err = db.Get(&user, sqlStr,2)
+    if err != nil {
+        log.Println(err)
+        return
+    }
+    return
 }
 
 // QueryUsersByID 查询多个用户
@@ -24,8 +38,54 @@ func QueryUsersByID() {
 
 }
 
+func NamedQueryUserSByName(name string) (err error){
+    sqlStr := "SELECT * FROM user WHERE name=:name" // 用 name 占位，表示需要的参数
+    // 下面就应该知道 name 是多少 ——> 用 map 传参
+    // 这个是匿名map？
+    rows, err := db.NamedQuery(sqlStr, map[string]interface{}{"name":name})
+    if err != nil {
+        log.Println(err)
+        return
+    }
+    defer rows.Close() // rows 要保证关闭，why？？？
+    for rows.Next() {
+        var u models.User
+        // 可以直接传结构体了
+        // 而且是传递指针进去，而不是返回一个结构体
+        // 别人是怎么传值可以好好研究
+        err = rows.StructScan(&u)
+        if err != nil {
+            log.Println(err)
+            return
+        }
+        fmt.Println(u)
+    }
+    // --------------
+    // 也可以用 struct 传参
+    placeholder := struct {
+      Name string // 这里的属性首字母必须大写，否则下面 rows 会处 nil 错误；原理待了解
+    }{
+      Name: name,
+    }
 
+    rows, err = db.NamedQuery(sqlStr, placeholder)
+    defer rows.Close()
+    for rows.Next() {
+       var u models.User
+       // 可以直接传结构体了
+       // 而且是传递指针进去，而不是返回一个结构体
+       // 别人是怎么传值可以好好研究
+       err = rows.StructScan(&u)
+       if err != nil {
+           log.Println(err)
+           return
+       }
+       fmt.Println(u)
+    }
+    return
+}
 
+// NamedExec
 
 
 

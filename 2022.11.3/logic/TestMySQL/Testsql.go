@@ -7,7 +7,7 @@ import (
     "log"
 )
 
-func Main() {
+func SqlMain() {
     err := standard.InitDB()
     if err != nil {
         log.Println(err.Error()) // Println 可以直接传 err，有什么区别，之后自己实现一个 error 试一下
