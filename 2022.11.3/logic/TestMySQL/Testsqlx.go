@@ -2,6 +2,7 @@ package TestMySQL
 
 import (
     "hpytest/sqldemo1/dao/mysql/sqlx"
+    "hpytest/sqldemo1/models"
     "log"
 )
 
@@ -27,5 +28,8 @@ func SqlxMain() {
     //fmt.Println(user) // {0 aaa 10} 因为没有查 id 所以是默认值，要注意默认值问题！！
     //---------------------
     //sqlx.TransactionDemo()
-    sqlx.NamedQueryUserSByName("aaa")
+    //sqlx.NamedQueryUserSByName("aaa")
+    //sqlx.QueryUsersByID(1)
+    user := models.User{Name: "ww", Age: 41}
+    sqlx.InsertUserByNamedExec(user)
 }

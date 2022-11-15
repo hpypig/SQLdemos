@@ -6,8 +6,18 @@ import (
     "log"
 )
 
+func TransactionDemo1(){
+
+}
+
+
+
+
+//--------------------------------------
+// 没看出和标准库的区别
+
 func TransactionDemo() (err error){ // 通过 err 知道是哪步错了
-    tx, err := db.Begin()
+    tx, err := db.Beginx()
     if err != nil {
         log.Println(err)
         return

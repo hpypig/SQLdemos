@@ -8,12 +8,19 @@ import (
 /*
 新增api
 Get 可以直接存到结构体里
-NamedQuery 也是返回多行 rows 但
-NamedExec
+NamedQuery 也是返回多行 rows 但可以用struct、map传占位符
+    map[string]interface{}{"name":name}
+    placeholder := struct {
+      Name string // 这里的属性首字母必须大写，否则下面 rows 会处 nil 错误；原理待了解
+    }{
+      Name: name,
+    }
+NamedExec 用 struct 传占位符
 
 
  */
 
+// 查询 -----------------------------------------------------------------------
 
 // QueryAUserByID 查询一个用户; 用 get 代替 QueryRow
 func QueryAUserByID(id int) (user models.User, err error) {
@@ -34,8 +41,15 @@ func QueryAUserByID(id int) (user models.User, err error) {
 }
 
 // QueryUsersByID 查询多个用户
-func QueryUsersByID() {
-
+func QueryUsersByID(id int) (users []models.User, err error) {
+    sqlStr := "SELECT id, name, age FROM USER WHERE id>?" // 如果字段不全会发生什么？？？？？？
+    err = db.Select(&users, sqlStr, id)
+    if err != nil {
+        log.Println(err)
+        return
+    }
+    fmt.Println(users)
+    return
 }
 
 func NamedQueryUserSByName(name string) (err error){
@@ -85,13 +99,59 @@ func NamedQueryUserSByName(name string) (err error){
     return
 }
 
-// NamedExec
+// 删改查 -----------------------------------------------------------------------
+
+// InsertUserByNamedExec 的
+func InsertUserByNamedExec(user models.User) (err error) {
+    // 默认用 struct 字段名的小写匹配占位符，除非用 tag 指明
+    sqlStr := "INSERT INTO user(name, age) VALUES (:Name, :age)"
+    res, err := db.NamedExec(sqlStr,&user) // `db:"name"`
+    if err != nil {
+        log.Println(err)
+        return
+    }
+    id, err := res.LastInsertId()
+    if err != nil {
+        log.Println(err)
+        return
+    }
+    fmt.Println(id)
+    return
+}
+// sqlx.In 批量插入 ----------------------------------------------
+
+func InsertUsers(users []models.User)  {
+    
+}
 
 
 
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//-------------------------下面是七米写的
 /*
 NamedExec   NamedQuery
 可以先指定占位符的名字（对应 map 的字段名），然后在执行时通过 map 传参
