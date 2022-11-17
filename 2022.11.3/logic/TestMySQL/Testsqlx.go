@@ -2,7 +2,6 @@ package TestMySQL
 
 import (
     "hpytest/sqldemo1/dao/mysql/sqlx"
-    "hpytest/sqldemo1/models"
     "log"
 )
 
@@ -30,6 +29,19 @@ func SqlxMain() {
     //sqlx.TransactionDemo()
     //sqlx.NamedQueryUserSByName("aaa")
     //sqlx.QueryUsersByID(1)
-    user := models.User{Name: "ww", Age: 41}
-    sqlx.InsertUserByNamedExec(user)
+
+    //user := models.User{Name: "ww", Age: 41}
+    //sqlx.InsertUserByNamedExec(user)
+
+    //user1 := models.User{Name: "rr", Age:1 }
+    //user2 := models.User{Name: "tt", Age: 2}
+    //user3 := models.User{Name: "qq", Age: 3}
+    //var users []interface{}
+    //users = append(users, user1, user2, user3)
+    //sqlx.InsertUsers(users)
+
+    ids := []int{3,2,4,5,6}
+    //sqlx.QueryUsersByIDs(ids) // [{0 aaa 10} {0 aaa 30} {0 aaa 2} {0 zs 21}]
+    sqlx.QueryAndOrderByIDs(ids) //[{0 aaa 10} {0 aaa 30} {0 aaa 2} {0 zs 21}]
 }
+

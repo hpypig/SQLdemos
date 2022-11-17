@@ -2,6 +2,7 @@ package standard
 
 import (
     "fmt"
+    "strings"
 
     "hpytest/sqldemo1/models"
     "log"
@@ -52,6 +53,30 @@ func InsertUser(user models.User) (err error) { // 是不是只要可能出现er
     fmt.Println(id)
     return
 }
+
+// 批量插入 七米写的，还没测
+
+// BatchInsertUsers 自行构造批量插入的语句
+func BatchInsertUsers(users []*models.User) error {
+    // 存放 (?, ?) 的slice
+    valueStrings := make([]string, 0, len(users))
+    // 存放values的slice
+    valueArgs := make([]interface{}, 0, len(users) * 2)
+    // 遍历users准备相关数据
+    for _, u := range users {
+        // 此处占位符要与插入值的个数对应
+        valueStrings = append(valueStrings, "(?, ?)")
+        valueArgs = append(valueArgs, u.Name)
+        valueArgs = append(valueArgs, u.Age)
+    }
+    // 自行拼接要执行的具体语句
+    stmt := fmt.Sprintf("INSERT INTO user (name, age) VALUES %s",
+        strings.Join(valueStrings, ","))
+    _, err := db.Exec(stmt, valueArgs...)
+    return err
+}
+
+
 
 // 这个函数没有定参数，不知道怎么定。要用到设计模式吗？为了适应update不同字段的情况
 

@@ -2,8 +2,10 @@ package sqlx
 
 import (
     "fmt"
+    "github.com/jmoiron/sqlx"
     "hpytest/sqldemo1/models"
     "log"
+    "strings"
 )
 /*
 新增api
@@ -104,7 +106,7 @@ func NamedQueryUserSByName(name string) (err error){
 // InsertUserByNamedExec 的
 func InsertUserByNamedExec(user models.User) (err error) {
     // 默认用 struct 字段名的小写匹配占位符，除非用 tag 指明
-    sqlStr := "INSERT INTO user(name, age) VALUES (:Name, :age)"
+    sqlStr := "INSERT INTO user(name, age) VALUES (:name, :age)"
     res, err := db.NamedExec(sqlStr,&user) // `db:"name"`
     if err != nil {
         log.Println(err)
@@ -119,9 +121,105 @@ func InsertUserByNamedExec(user models.User) (err error) {
     return
 }
 // sqlx.In 批量插入 ----------------------------------------------
+// sql 里的 (?,?,?) 可以先由 (?) 代替，执行后被替换成正确的sql语句
+// 注：insert 最后连续跟多个(?,?) 是框架特有的，不是sql的语法
 
-func InsertUsers(users []models.User)  {
-    
+// InsertUsers 必须先实现传入的结构体的 Value 接口；假如有多种插入字段组合，Value咋搞？
+func InsertUsers(users []interface{}) (err error) { // 要用 interface{} 切片而不是 []User
+    sqlStr := "INSERT INTO user (name, age) VALUES(?), (?), (?)"
+    query, args, err := sqlx.In(sqlStr,users...)
+    if err != nil {
+        log.Println(err)
+        return
+    }
+    fmt.Println(query) // INSERT INTO user (name, age) VALUES(?, ?), (?, ?), (?, ?)
+    fmt.Println(args) // [rr 1 tt 2 qq 3]
+    // 相当于直接用结构体字段，帮我们进行了 args 生成
+    //（直接用结构体而无需自己提取字段后 append args）
+    res, err := db.Exec(query, args...)
+    if err != nil {
+        log.Println(err)
+        return
+    }
+    id, err := res.LastInsertId()
+    if err != nil {
+        log.Println(err)
+        return
+    }
+    fmt.Println(id)
+    n, err := res.RowsAffected()
+    if err != nil {
+        log.Println(err)
+        return
+    }
+    fmt.Println(n)
+    return
+}
+
+// BatchInsertUsers3 使用NamedExec实现批量插入
+func BatchInsertUsers3(users []*models.User) error { // 感觉这个简洁点啊，不用实现接口，也不用传空接口切片
+    _, err := db.NamedExec("INSERT INTO user (name, age) VALUES (:name, :age)", users)
+    return err
+}
+
+// QueryUsersByIDs sql in 查询
+func QueryUsersByIDs(ids []int) (users []models.User, err error){
+    sqlStr := "SELECT name, age FROM user WHERE id IN (?)"
+    query, args, err := sqlx.In(sqlStr,ids)
+    if err != nil {
+        log.Println(err)
+        return
+    }
+    //fmt.Println(query) // SELECT name, age FROM user WHERE id IN (?, ?, ?, ?, ?)
+    //fmt.Println(args) // [1 2 3 4 5]
+    // sql 老方法 Query ——> rows ——> u
+    //rows, err := db.Query(query, args...)
+    //defer rows.Close()
+    //for rows.Next() {
+    //    var u models.User
+    //    err = rows.Scan(&u.Name, &u.Age)
+    //    if err != nil {
+    //        log.Println(err)
+    //        return
+    //    }
+    //    fmt.Println(u)
+    //}
+    //query = db.Rebind(query) // 好像不绑也行，不知道为啥
+    //fmt.Println(query) // SELECT name, age FROM user WHERE id IN (?, ?, ?, ?, ?)
+    err = db.Select(&users,query,args...) // `db:"Name"` 会报错，列 name 在 User 找不到对应属性
+    if err != nil {
+        log.Println(err)
+        return
+    }
+    fmt.Println(users)
+    return
+}
+
+// QueryAndOrderByIDs 按照指定id查询并维护顺序
+func QueryAndOrderByIDs(ids []int)(users []models.User, err error){
+    // 动态填充id
+    strIDs := make([]string, 0, len(ids))
+    for _, id := range ids {
+        strIDs = append(strIDs, fmt.Sprintf("%d", id))
+    }
+
+    query, args, err := sqlx.In("SELECT name, age FROM user WHERE id IN (?) ORDER BY FIND_IN_SET(id, ?)", ids, strings.Join(strIDs, ","))
+    if err != nil {
+        log.Println(err)
+        return
+    }
+    //fmt.Println(query) //SELECT name, age FROM user WHERE id IN (?, ?, ?, ?, ?) ORDER BY FIND_IN_SET(id, ?)
+    fmt.Println(args)
+    // sqlx.In 返回带 `?` bindvar的查询语句, 我们使用Rebind()重新绑定它
+    //query = db.Rebind(query)
+
+    err = db.Select(&users, query, args...)
+    if err != nil {
+        log.Println(err)
+        return
+    }
+    fmt.Println(users)
+    return
 }
 
 
@@ -145,12 +243,7 @@ func InsertUsers(users []models.User)  {
 
 
 
-
-
-
-
-
-
+//------------------------------
 //-------------------------下面是七米写的
 /*
 NamedExec   NamedQuery

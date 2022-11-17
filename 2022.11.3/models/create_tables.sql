@@ -9,3 +9,6 @@ CREATE TABLE `user` (
 `age` INT(11) DEFAULT 0 COMMENT '年龄', -- 为什么 int 喜欢用 11 的宽度？
 PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
+
+# INSERT INTO user(name, age) VALUES ('qwe', 1);
+SELECT name, age FROM user WHERE id IN (3, 2, 4, 5, 6) ORDER BY FIND_IN_SET(id, '3,2,4,5,6');
